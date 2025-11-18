@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>添加充电桩</title>
+    <style>
+        body {
+            font-family: 'Orbitron', sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #000;
+            color: cyan;
+            background-image: url('{{ url_for('static', filename='image/BackGroud.png') }}');
+            background-size: cover;
+            background-position: center;
+        }
+        nav {
+            background-color: rgba(0, 0, 0, 0.7);
+            color: cyan;
+            padding: 10px;
+            box-shadow: 0 0 10px #00f;
+        }
+        nav ul {
+            list-style-type: none;
+            margin: 0;
+            padding: 0;
+            display: flex;
+        }
+        nav ul li {
+            margin-right: 20px;
+        }
+        nav ul li a {
+            color: cyan;
+            text-decoration: none;
+            transition: color 0.3s;
+        }
+        nav ul li a:hover {
+            color: #f00;
+        }
+        .form-container {
+            width: 300px;
+            margin: 50px auto;
+            padding: 20px;
+            background-color: rgba(0, 0, 0, 0.7);
+            border: 1px solid #f00;
+            box-shadow: 0 0 10px #f00;
+        }
+        .form-container h1 {
+            color: cyan;
+            text-align: center;
+        }
+        .form-container label {
+            color: cyan;
+        }
+        .form-container input {
+            width: 100%;
+            padding: 5px;
+            margin-bottom: 10px;
+        }
+        .form-container button {
+            width: 100%;
+            padding: 10px;
+            background-color: rgba(0, 0, 255, 0.7);
+            border: none;
+            color: white;
+            cursor: pointer;
+        }
+        .form-container button:hover {
+            background-color: rgba(0, 0, 255, 0.9);
+        }
+    </style>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron&display=swap" rel="stylesheet">
+</head>
+<body>
+    <nav>
+        <ul>
+            <li><a href="{{ url_for('dashboard') }}">总览</a></li>
+            <li><a href="{{ url_for('maintenance.charger_details') }}">充电桩详情</a></li>
+            <li><a href="{{ url_for('system_introduction') }}">系统介绍</a></li>
+            <li><a href="{{ url_for('maintenance.logout') }}">退出</a></li>
+        </ul>
+    </nav>
+    <div class="form-container">
+        <h1>添加充电桩</h1>
+        <form method="post">
+            <label for="charger_id">充电桩 ID:</label>
+            <input type="text" id="charger_id" name="charger_id" required><br>
+            <label for="current">电流:</label>
+            <input type="text" id="current" name="current" required><br>
+            <label for="voltage">电压:</label>
+            <input type="text" id="voltage" name="voltage" required><br>
+            <label for="rate">费率:</label>
+            <input type="text" id="rate" name="rate" required><br>
+            <label for="charger_type">充电桩类型:</label>
+            <input type="text" id="charger_type" name="charger_type" required><br>
+            <button type="submit">添加</button>
+        </form>
+    </div>
+</body>
+</html>

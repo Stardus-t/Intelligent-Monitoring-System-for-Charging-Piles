@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>充电记录报表</title>
+    <style>
+        body {
+            font-family: 'Orbitron', sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #000;
+            color: cyan;
+            background-image: url('{{ url_for('static', filename='image/BackGroud.png') }}');
+            background-size: cover;
+            background-position: center;
+        }
+        nav {
+            background-color: rgba(0, 0, 0, 0.7);
+            color: cyan;
+            padding: 10px;
+            box-shadow: 0 0 10px #00f;
+        }
+        nav ul {
+            list-style-type: none;
+            margin: 0;
+            padding: 0;
+            display: flex;
+        }
+        nav ul li {
+            margin-right: 20px;
+        }
+        nav ul li a {
+            color: cyan;
+            text-decoration: none;
+            transition: color 0.3s;
+        }
+        nav ul li a:hover {
+            color: #f00;
+        }
+        table {
+            width: 80%;
+            margin: 50px auto;
+            border-collapse: collapse;
+        }
+        th, td {
+            border: 1px solid cyan;
+            padding: 10px;
+            text-align: center;
+        }
+        th {
+            background-color: rgba(0, 0, 255, 0.7);
+        }
+        tr:nth-child(even) {
+            background-color: rgba(0, 0, 0, 0.5);
+        }
+        tr:hover {
+            background-color: rgba(0, 0, 255, 0.2);
+        }
+    </style>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron&display=swap" rel="stylesheet">
+</head>
+<body>
+    <nav>
+        <ul>
+            <li><a href="{{ url_for('dashboard') }}">总览</a></li>
+            <li><a href="{{ url_for('maintenance.charger_details') }}">充电桩详情</a></li>
+            <li><a href="{{ url_for('system_introduction') }}">系统介绍</a></li>
+            <li><a href="{{ url_for('maintenance.logout') }}">退出</a></li>
+        </ul>
+    </nav>
+    <h1>充电记录报表</h1>
+    <table>
+        <thead>
+            <tr>
+                <th>用户ID</th>
+                <th>充电桩ID</th>
+                <th>开始时间</th>
+                <th>结束时间</th>
+                <th>充电量</th>
+                <th>费用</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for record in charging_records %}
+            <tr>
+                <td>{{ record.user_id }}</td>
+                <td>{{ record.charger_id }}</td>
+                <td>{{ record.start_time }}</td>
+                <td>{{ record.end_time }}</td>
+                <td>{{ record.charging_amount }}</td>
+                <td>{{ record.cost }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</body>
+</html>

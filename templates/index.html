@@ -1,0 +1,395 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>充电桩监测平台</title>
+    <style>
+        body {
+            font-family: 'Orbitron', sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #000;
+            color: cyan;
+            background-image: url('{{ url_for('static', filename='image/BackGroud.png') }}');
+            background-size: cover;
+            background-position: center;
+        }
+
+        nav {
+            background-color: rgba(0, 0, 0, 0.7);
+            color: cyan;
+            padding: 10px;
+            box-shadow: 0 0 10px #00f;
+        }
+
+        nav ul {
+            list-style-type: none;
+            margin: 0;
+            padding: 0;
+            display: flex;
+        }
+
+        nav ul li {
+            margin-right: 20px;
+        }
+
+        nav ul li a {
+            color: cyan;
+            text-decoration: none;
+            transition: color 0.3s;
+        }
+
+        nav ul li a:hover {
+            color: #f00;
+        }
+
+       .dashboard {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 20px;
+            padding: 20px;
+        }
+
+       .box {
+            border: none;
+            padding: 20px;
+            height: 300px;
+            position: relative;
+            background-color: rgba(0, 0, 0, 0.5);
+            background-image: url('{{ url_for('static', filename='elements/frame.png') }}');
+            background-size: 100% 100%;
+            background-position: center;
+            box-shadow: 0 0 10px #00f;
+            transition: transform 0.3s;
+        }
+
+       .box:hover {
+            transform: scale(1.05);
+        }
+
+       .box canvas {
+            max-width: 100%;
+            max-height: 100%;
+            position: relative;
+            top: -20px;
+            right: -30px;
+        }
+
+        #faulty-chargers {
+            border: 1px solid #f00;
+            padding: 20px;
+            background-color: rgba(0, 0, 0, 0.7);
+            box-shadow: 0 0 10px #f00;
+            color: #f00;
+            grid-column: span 2;
+        }
+
+        .change-bg-container {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+        }
+
+       .stat-item {
+            display: flex;
+            flex-direction: row;
+            justify-content: center;
+            align-items: center;
+            margin-bottom: 10px;
+            position: relative;
+        }
+
+       .stat-group {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            position: relative;
+        }
+
+       .stat-number {
+            font-size: 24px;
+            position: absolute;
+            top: 43%;
+            left: 50%;
+            transform: translate(-60%, -60%);
+        }
+
+       .blue-text {
+            color: cyan;
+        }
+
+       .red-text {
+            color: red;
+        }
+
+       .blue-label {
+            color: cyan;
+            margin-top: 5px;
+            font-size: 16px;
+        }
+
+       .red-label {
+            color: red;
+            margin-top: 5px;
+            font-size: 16px;
+        }
+
+       .stat-item img {
+            max-width: 45%;
+            height: auto;
+        }
+
+
+       .page-title {
+            text-align: center;
+            color: cyan;
+            font-size: 36px;
+            margin: 20px 0;
+        }
+
+       .box h2,
+       #faulty-chargers h2 {
+            color: cyan;
+        }
+
+        #faulty-chargers h2 {
+            color: #f00;
+        }
+    </style>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+
+<body>
+    <nav>
+        <ul>
+            <li><a href="#">总览</a></li>
+            <li><a href="{{ url_for('maintenance.repair_requests') }}">报修请求列表</a></li>
+            <li><a href="{{ url_for('maintenance.charger_details') }}">充电桩详情</a></li>
+            <li><a href="{{ url_for('maintenance.add_charger') }}">添加充电桩</a></li>
+            <li><a href="{{ url_for('maintenance.upload_qrcode') }}">上传二维码</a></li>
+            <li><a href="{{ url_for('maintenance.recharge') }}">电费充值</a></li>
+            <li><a href="{{ url_for('system_introduction') }}">系统介绍</a></li>
+            <li><a href="{{ url_for('maintenance.submit_feedback') }}">提交反馈和投诉</a></li>
+            <li><a href="{{ url_for('maintenance.feedback_list') }}">反馈和投诉列表</a></li>
+                    <li><a href="{{ url_for('maintenance.charging_report') }}">充电记录报表</a></li>
+        <li><a href="{{ url_for('maintenance.repair_report') }}">报修请求报表</a></li>
+            <li><a href="{{ url_for('maintenance.update_profile') }}">修改账号信息</a></li>
+            <li><a href="{{ url_for('maintenance.logout') }}">退出</a></li>
+        </ul>
+    </nav>
+    <h1 class="page-title">充电桩监测系统</h1>
+    <div class="dashboard">
+        <div class="box">
+            <h2>充电桩统计信息</h2>
+            <div class="stat-item">
+                <div class="stat-group blue-group">
+                    <span class="stat-number blue-text">{{ total_charging_piles }}</span>
+                    <img src="{{ url_for('static', filename='elements/count_of_pile.png') }}" alt="图片1" style="max-width: 100%; height: auto;">
+                    <p class="stat-label blue-label">当前充电桩个数</p>
+                </div>
+                <div class="stat-group red-group">
+                    <span class="stat-number red-text">{{ alarm_count }}</span>
+                    <img src="{{ url_for('static', filename='elements/num_of_alarm.png') }}" alt="图片2" style="max-width: 100%; height: auto;">
+                    <p class="stat-label red-label">报警次数</p>
+                </div>
+            </div>
+        </div>
+        <div class="box">
+            <h2>当前使用的充电桩数量</h2>
+            <canvas id="chargingPilesProgress"></canvas>
+        </div>
+        <div class="box">
+            <h2>过去7天使用的充电桩数量</h2>
+            <canvas id="chargingPilesLineChart"></canvas>
+        </div>
+        <div class="box">
+            <h2>过去7天的报警次数</h2>
+            <canvas id="alarmCountsLineChart"></canvas>
+        </div>
+        <div class="box">
+            <h2>当前被预约的充电桩信息</h2>
+            <p>当前被预约的充电桩总数: <span class="stat-number blue-text">{{ total_reserved }}</span></p>
+            {% if reserved_charger_ids %}
+            <ul>
+                {% for charger_id in reserved_charger_ids %}
+                <li>充电桩 ID: {{ charger_id }}</li>
+                {% endfor %}
+            </ul>
+            {% else %}
+            <p>暂无被预约的充电桩</p>
+            {% endif %}
+        </div>
+        <div class="box">
+            <h2>充电记录</h2>
+            <table>
+                <thead>
+                    <tr>
+                        <th>用户ID</th>
+                        <th>充电桩ID</th>
+                        <th>开始时间</th>
+                        <th>结束时间</th>
+                        <th>充电量</th>
+                        <th>费用</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for record in charging_records %}
+                    <tr>
+                        <td>{{ record.user_id }}</td>
+                        <td>{{ record.charger_id }}</td>
+                        <td>{{ record.start_time }}</td>
+                        <td>{{ record.end_time }}</td>
+                        <td>{{ record.charging_amount }}</td>
+                        <td>{{ record.cost }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        <div class="box" onclick="window.location.href='{{ url_for('system_introduction') }}'">
+            <h2>系统介绍</h2>
+            <p>这是一个充电桩监测平台，用于实时监测充电桩的状态...</p>
+        </div>
+        <div class="box">
+            <h2>其他信息</h2>
+            <p>这里可以显示其他相关信息。</p>
+        </div>
+        <div id="faulty-chargers">
+            <h2>故障充电桩</h2>
+            {% if faulty_chargers %}
+            <ul>
+                {% for charger_id in faulty_chargers %}
+                <li>充电桩 ID: {{ charger_id }}</li>
+                {% endfor %}
+            </ul>
+            {% else %}
+            <p>暂无故障充电桩</p>
+            {% endif %}
+        </div>
+    </div>
+    <div class="change-bg-container">
+        <input type="file" id="bg-image-input" accept="image/*">
+        <label for="bg-image-input">更改背景图片</label>
+    </div>
+    <script>
+        const bgImageInput = document.getElementById('bg-image-input');
+        bgImageInput.addEventListener('change', function () {
+            const file = this.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function (e) {
+                    document.body.style.backgroundImage = `url(${e.target.result})`;
+                };
+                reader.readAsDataURL(file);
+            }
+        });
+        const chargingPilesProgress = document.getElementById('chargingPilesProgress').getContext('2d');
+        const totalChargingPiles = {{ total_charging_piles }};
+        const usedChargingPiles = totalChargingPiles - {{ disabled_chargers_count }};
+        const disabledChargingPiles = {{ disabled_chargers_count }};
+        const chargingPilesProgressChart = new Chart(chargingPilesProgress, {
+            type: 'doughnut',
+            data: {
+                labels: ['使用中', '空闲', '已禁用'],
+                datasets: [{
+                    data: [usedChargingPiles, totalChargingPiles - usedChargingPiles - disabledChargingPiles, disabledChargingPiles],
+                    backgroundColor: ['#f00', '#00f', '#808080'],
+                    borderWidth: 0
+                }]
+            },
+            options: {
+                cutout: '80%',
+                layout: {
+                    padding: {
+                        top: -30
+                    }
+                },
+                plugins: {
+                    legend: {
+                        display: true,
+                        position: 'right',
+                        align: 'center',
+                        labels: {
+                            boxWidth: 20,
+                            padding: 15,
+                            fontSize: 24,
+                            color: 'white'
+                        },
+                        offset: 30,
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: function (context) {
+                                return context.label + ': ' + context.parsed + ' (' + ((context.parsed / totalChargingPiles) * 100).toFixed(2) + '%)';
+                            }
+                        }
+                    }
+                }
+            }
+        });
+
+        const chargingPilesLineChart = document.getElementById('chargingPilesLineChart').getContext('2d');
+        const chargingDates = {{ charging_dates|tojson }};
+        const chargingCounts = {{ charging_counts|tojson }};
+        const chargingPilesLineChartInstance = new Chart(chargingPilesLineChart, {
+            type: 'line',
+            data: {
+                labels: chargingDates,
+                datasets: [{
+                    label: '过去7天使用的充电桩数量',
+                    data: chargingCounts,
+                    borderColor: 'green',
+                    backgroundColor: 'rgba(0, 255, 0, 0.1)',
+                    fill: true
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        labels: {
+                            fontSize: 24,
+                            color: 'white'
+                        }
+                    }
+                }
+            }
+        });
+
+
+        const alarmCountsLineChart = document.getElementById('alarmCountsLineChart').getContext('2d');
+        const alarmDates = {{ alarm_dates|tojson }};
+        const alarmCounts = {{ alarm_counts|tojson }};
+        const alarmCountsLineChartInstance = new Chart(alarmCountsLineChart, {
+            type: 'line',
+            data: {
+                labels: alarmDates,
+                datasets: [{
+                    label: '过去7天的报警次数',
+                    data: alarmCounts,
+                    borderColor: '#f00',
+                    backgroundColor: 'rgba(255, 0, 0, 0.1)',
+                    fill: true
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        labels: {
+                            fontSize: 24,
+                            color: 'white'
+                        }
+                    }
+                }
+            }
+        });
+    </script>
+</body>
+
+</html>

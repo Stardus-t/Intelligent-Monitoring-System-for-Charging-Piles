@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>报修请求报表</title>
+    <style>
+        body {
+            font-family: 'Orbitron', sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #000;
+            color: cyan;
+            background-image: url('{{ url_for('static', filename='image/BackGroud.png') }}');
+            background-size: cover;
+            background-position: center;
+        }
+        nav {
+            background-color: rgba(0, 0, 0, 0.7);
+            color: cyan;
+            padding: 10px;
+            box-shadow: 0 0 10px #00f;
+        }
+        nav ul {
+            list-style-type: none;
+            margin: 0;
+            padding: 0;
+            display: flex;
+        }
+        nav ul li {
+            margin-right: 20px;
+        }
+        nav ul li a {
+            color: cyan;
+            text-decoration: none;
+            transition: color 0.3s;
+        }
+        nav ul li a:hover {
+            color: #f00;
+        }
+        table {
+            width: 80%;
+            margin: 50px auto;
+            border-collapse: collapse;
+        }
+        th, td {
+            border: 1px solid cyan;
+            padding: 10px;
+            text-align: center;
+        }
+        th {
+            background-color: rgba(0, 0, 255, 0.7);
+        }
+        tr:nth-child(even) {
+            background-color: rgba(0, 0, 0, 0.5);
+        }
+        tr:hover {
+            background-color: rgba(0, 0, 255, 0.2);
+        }
+    </style>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron&display=swap" rel="stylesheet">
+</head>
+<body>
+    <nav>
+        <ul>
+            <li><a href="{{ url_for('dashboard') }}">总览</a></li>
+            <li><a href="{{ url_for('maintenance.charger_details') }}">充电桩详情</a></li>
+            <li><a href="{{ url_for('system_introduction') }}">系统介绍</a></li>
+            <li><a href="{{ url_for('maintenance.logout') }}">退出</a></li>
+        </ul>
+    </nav>
+    <h1>报修请求报表</h1>
+    <table>
+        <thead>
+            <tr>
+                <th>请求ID</th>
+                <th>用户ID</th>
+                <th>充电桩ID</th>
+                <th>请求时间</th>
+                <th>故障描述</th>
+                <th>状态</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for request in repair_requests %}
+            <tr>
+                <td>{{ request.id }}</td>
+                <td>{{ request.user_id }}</td>
+                <td>{{ request.charger_id }}</td>
+                <td>{{ request.request_time }}</td>
+                <td>{{ request.description }}</td>
+                <td>{{ request.status }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</body>
+</html>

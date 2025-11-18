@@ -1,0 +1,294 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>充电桩详情</title>
+    <style>
+        body {
+            font-family: 'Orbitron', sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #000;
+            color: #00f;
+            background-image: url('{{ url_for('image', filename='image/BackGroud.png') }}');
+            background-size: cover;
+            background-position: center;
+        }
+
+        nav {
+            background-color: rgba(0, 0, 0, 0.7);
+            color: cyan;
+            padding: 10px;
+            box-shadow: 0 0 10px #00f;
+        }
+
+        nav ul {
+            list-style-type: none;
+            margin: 0;
+            padding: 0;
+            display: flex;
+        }
+
+        nav ul li {
+            margin-right: 20px;
+        }
+
+        nav ul li a {
+            color: cyan;
+            text-decoration: none;
+            transition: color 0.3s;
+        }
+
+        nav ul li a:hover {
+            color: #f00;
+        }
+
+       .charger-container {
+            display: flex;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+       .charger-box {
+            border: 1px solid #ff3333;
+            padding: 8px;
+            margin: 8px;
+            width: 160px;
+            display: inline-block;
+            cursor: pointer;
+            background-color: rgba(255, 51, 51, 0.7);
+            box-shadow: 0 0 10px #ff3333;
+            transition: transform 0.3s;
+        }
+
+       .charger-box:hover {
+            transform: scale(1.05);
+        }
+
+       .alert {
+            background-color: rgba(255, 50, 50, 0.7);
+            border-color: #ff0000;
+            box-shadow: 0 0 10px #ff0000;
+            color: #fff;
+        }
+
+       .safe {
+            background-color: rgba(0, 0, 255, 0.7);
+            border-color: #00f;
+            box-shadow: 0 0 10px #00f;
+            color: #fff;
+        }
+
+        #charger-details-modal {
+            width: 80%;
+            max-width: 800px;
+            margin: 0 auto;
+            background-color: rgba(0, 0, 0, 0.7);
+            border: 1px solid #f00;
+            box-shadow: 0 0 10px #f00;
+            padding: 20px;
+            position: relative;
+            z-index: 1;
+        }
+
+        #current-chart {
+            width: 100%;
+            height: auto;
+            max-height: 300px;
+        }
+
+       .charger-box img {
+            max-width: 100%;
+            max-height: 100px;
+            height: auto;
+        }
+    </style>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+    <nav>
+        <ul>
+            <li><a href="{{ url_for('dashboard') }}">总览</a></li>
+            <li><a href="{{ url_for('maintenance.repair_requests') }}">报修请求列表</a></li>
+            <li><a href="{{ url_for('maintenance.charger_details') }}">充电桩详情</a></li>
+            <li><a href="{{ url_for('maintenance.add_charger') }}">添加充电桩</a></li>
+            <li><a href="{{ url_for('maintenance.upload_qrcode') }}">上传二维码</a></li>
+            <li><a href="{{ url_for('maintenance.recharge') }}">电费充值</a></li>
+            <li><a href="{{ url_for('system_introduction') }}">系统介绍</a></li>
+            <li><a href="{{ url_for('maintenance.submit_feedback') }}">提交反馈和投诉</a></li>
+            <li><a href="{{ url_for('maintenance.feedback_list') }}">反馈和投诉列表</a></li>
+            <li><a href="{{ url_for('maintenance.charging_report') }}">充电记录报表</a></li>
+            <li><a href="{{ url_for('maintenance.repair_report') }}">报修请求报表</a></li>
+            <li><a href="{{ url_for('maintenance.update_profile') }}">修改账号信息</a></li>
+            <li><a href="{{ url_for('maintenance.logout') }}">退出</a></li>
+        </ul>
+    </nav>
+    <h1>充电桩详情</h1>
+    <div class="charger-container">
+        {% for charger_id in charger_ids %}
+        <div class="charger-box {% if charger_status[charger_id].status == 'alert' %}alert{% elif charger_status[charger_id].status =='safe' %}safe{% endif %}"
+             onclick="showChargerDetails({{ charger_id }})">
+            <h2>充电桩 ID: {{ charger_id }}</h2>
+            <img src="{{ url_for('frame', filename='elements/' + ('alarm_pile.png' if charger_status[charger_id].status == 'alert' else'saved_pile.png')) }}"
+                alt="充电桩图片" style="max-width: 100%; height: auto;">
+            <p>预测状态: {{ charger_status[charger_id].status }}</p>
+            <p>预测分类: {{ charger_status[charger_id].predicted_class }}</p>
+            {% if charger_status[charger_id].is_disabled %}
+            <button onclick="enableCharger({{ charger_id }})">启用</button>
+            {% endif %}
+            {% if not charger_status[charger_id].is_disabled %}
+            <button onclick="disableCharger({{ charger_id }})">禁用</button>
+            <button onclick="reserveCharger({{ charger_id }})">预约</button>
+            <button onclick="submitRepairRequest({{ charger_id }})">报修</button>
+            {% endif %}
+            {% if charger_status[charger_id].is_reserved %}
+            <button onclick="cancelReservation({{ charger_id }})">取消预约</button>
+            {% endif %}
+        </div>
+        {% endfor %}
+    </div>
+    <div id="charger-details-modal" style="display: none;">
+        <h2 style="color: cyan;">充电桩详情</h2>
+        <p>实时电流: <span id="current-value"></span></p>
+        <p>预测分类: <span id="predicted-class" style="color: white;"></span></p>
+        <canvas id="current-chart"></canvas>
+    </div>
+    <script>
+        let currentChart;
+
+        function showChargerDetails(charger_id) {
+
+            fetch(`/maintenance/charger_current/${charger_id}`)
+               .then(response => response.json())
+               .then(data => {
+                    if (data.error) {
+                        document.getElementById('current-value').textContent = data.error;
+                        document.getElementById('predicted-class').textContent = '无';
+                    } else {
+                        const originalCurrent = data.original_current;
+                        const predictedCurrent = data.predicted_current;
+                        const predictedClass = data.predicted_class;
+                        const currentChartCtx = document.getElementById('current-chart').getContext('2d');
+
+                        if (currentChart) {
+                            currentChart.destroy();
+                        }
+
+                        currentChart = new Chart(currentChartCtx, {
+                            type: 'line',
+                            data: {
+                                labels: [...Array(originalCurrent.length + predictedCurrent.length).keys()],
+                                datasets: [
+                                    {
+                                        label: `原电流曲线 (实时电流: ${originalCurrent[originalCurrent.length - 1]})`,
+                                        data: originalCurrent,
+                                        borderColor: '#00f',
+                                        backgroundColor: 'rgba(0, 0, 255, 0.1)',
+                                        fill: true
+                                    },
+                                    {
+                                        label: '预测电流走势',
+                                        data: [...Array(originalCurrent.length).fill(null), ...predictedCurrent],
+                                        borderColor: '#f00',
+                                        backgroundColor: 'rgba(255, 0, 0, 0.1)',
+                                        fill: true
+                                    }
+                                ]
+                            },
+                            options: {
+                                responsive: true,
+                                maintainAspectRatio: false,
+                                aspectRatio: 2,
+                                scales: {
+                                    x: {
+                                        max: originalCurrent.length + predictedCurrent.length - 1,
+                                        min: 0
+                                    }
+                                },
+                                plugins: {
+                                    legend: {
+                                        labels: {
+                                            color: 'white'
+                                        }
+                                    }
+                                }
+                            }
+                        });
+
+                        document.getElementById('current-value').textContent = originalCurrent[originalCurrent.length - 1];
+                        document.getElementById('predicted-class').textContent = predictedClass;
+                    }
+
+
+                    document.getElementById('charger-details-modal').style.display = 'block';
+                });
+        }
+        function disableCharger(charger_id) {
+            if (confirm('确定要禁用这个充电桩吗？')) {
+                fetch(`/maintenance/disable_charger/${charger_id}`)
+                   .then(response => response.json())
+                   .then(data => {
+                        if (data.success) {
+                            alert('充电桩已禁用');
+                            // 刷新页面以更新状态
+                            location.reload();
+                        } else {
+                            alert('禁用失败: ' + data.message);
+                        }
+                    });
+            }
+        }
+        function enableCharger(charger_id) {
+            if (confirm('确定要启用这个充电桩吗？')) {
+                fetch(`/maintenance/enable_charger/${charger_id}`)
+                   .then(response => response.json())
+                   .then(data => {
+                        if (data.success) {
+                            alert('充电桩已启用');
+                            // 刷新页面以更新状态
+                            location.reload();
+                        } else {
+                            alert('启用失败: ' + data.message);
+                        }
+                    });
+            }
+        }
+        function reserveCharger(charger_id) {
+        if (confirm('确定要预约这个充电桩吗？')) {
+            fetch(`/maintenance/reserve_charger/${charger_id}`)
+               .then(response => response.json())
+               .then(data => {
+                    if (data.success) {
+                        alert('预约成功');
+                        // 刷新页面以更新状态
+                        location.reload();
+                    } else {
+                        alert('预约失败: ' + data.message);
+                    }
+                });
+        }
+    }
+        function cancelReservation(charger_id) {
+        if (confirm('确定要取消这个充电桩的预约吗？')) {
+            fetch(`/maintenance/cancel_reservation/${charger_id}`)
+               .then(response => response.json())
+               .then(data => {
+                    if (data.success) {
+                        alert('预约已取消');
+                        // 刷新页面以更新状态
+                        location.reload();
+                    } else {
+                        alert('取消预约失败: ' + data.message);
+                    }
+                });
+        }
+    }
+        function submitRepairRequest(charger_id) {
+        if (confirm('确定要提交这个充电桩的报修请求吗？')) {
+            window.location.href = `/maintenance/submit_repair_request/${charger_id}`;
+        }
+    }
+    </script>
+</body>
+</html>
